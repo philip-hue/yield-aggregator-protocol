@@ -4,9 +4,13 @@ authors = []
 description = ""
 telemetry = true
 requirements = []
+[contracts.sip-010-trait]
+path = "contracts/sip-010-trait.clar"
+depends_on = []
+
 [contracts.yield-aggregator]
 path = "contracts/yield-aggregator.clar"
-depends_on = []
+depends_on = ["sip-010-trait"]
 
 [repl]
 costs_version = 2

@@ -350,3 +350,64 @@
         (ok true)
     )
 )
+
+;; Helper Functions
+(define-private (is-contract-owner)
+    (is-eq tx-sender (var-get contract-owner))
+)
+
+(define-private (calculate-shares (amount uint))
+    (let
+        (
+            (total-supply (var-get total-value-locked))
+        )
+        (if (is-eq total-supply u0)
+            amount
+            (/ (* amount u1000000) total-supply)
+        )
+    )
+)
+
+(define-private (calculate-withdrawal-amount (share-amount uint))
+    (let
+        (
+            (total-shares (var-get total-value-locked))
+        )
+        (/ (* share-amount (var-get total-value-locked)) u1000000)
+    )
+)
+
+(define-private (allocate-to-best-strategy (amount uint))
+    (let
+        (
+            (best-strategy (calculate-best-strategy amount))
+        )
+        (if (is-eq (get best-strategy best-strategy) u0)
+            (ok true)  ;; Return (response bool) when no strategy is found
+            (begin
+                (try! (reallocate-funds (get best-strategy best-strategy) amount))
+                (ok true)  ;; Return (response bool) after successful reallocation
+            )
+        )
+    )
+)
+
+(define-private (reallocate-funds (strategy-id uint) (amount uint))
+    (let
+        (
+            (strategy (unwrap! (map-get? Strategies { strategy-id: strategy-id }) ERR-STRATEGY-NOT-FOUND))
+            (allocation (unwrap! (map-get? StrategyAllocations { strategy-id: strategy-id }) ERR-STRATEGY-NOT-FOUND))
+        )
+        (asserts! (get enabled strategy) ERR-STRATEGY-DISABLED)
+        (asserts! (>= amount (get min-deposit allocation)) ERR-INVALID-AMOUNT)
+        (asserts! (<= amount (get max-deposit allocation)) ERR-INVALID-AMOUNT)
+
+        ;; Update strategy TVL
+        (map-set Strategies
+            { strategy-id: strategy-id }
+            (merge strategy { tvl: (+ (get tvl strategy) amount) })
+        )
+
+        (ok true)
+    )
+)
