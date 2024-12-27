@@ -1,0 +1,131 @@
+# Yield Aggregator Smart Contract
+
+A sophisticated yield optimization protocol built on Stacks blockchain that automatically allocates deposited tokens across multiple DeFi strategies to maximize returns while managing risk.
+
+## Features
+
+- **Automated Yield Optimization**: Dynamically allocates funds to the highest-yielding strategies
+- **Multi-Strategy Support**: Supports up to 10 concurrent yield-generating strategies
+- **SIP-010 Compliant**: Fully implements the SIP-010 fungible token standard
+- **Risk Management**: Built-in risk scoring system and emergency shutdown mechanism
+- **Fee Structure**: Configurable performance and management fees
+- **User Shares**: Proportional share token system for tracking user deposits
+
+## Architecture
+
+### Core Components
+
+1. **Strategy Management**
+
+   - Dynamic strategy registration
+   - APY tracking and updates
+   - Risk scoring system
+   - TVL monitoring
+   - Strategy allocation limits
+
+2. **User Management**
+
+   - Deposit tracking
+   - Share token calculation
+   - Withdrawal processing
+   - Balance management
+
+3. **Security Features**
+   - Emergency shutdown
+   - Access controls
+   - Reentrancy protection
+   - Slippage checks
+
+### Key Data Structures
+
+- `Strategies`: Stores strategy information and performance metrics
+- `UserDeposits`: Tracks user deposits and share tokens
+- `StrategyAllocations`: Manages strategy allocation parameters
+
+## Usage
+
+### For Users
+
+```clarity
+;; Deposit tokens
+(contract-call? .yield-aggregator deposit token-trait amount)
+
+;; Withdraw tokens
+(contract-call? .yield-aggregator withdraw token-trait share-amount)
+
+;; Query user info
+(contract-call? .yield-aggregator get-user-info user-principal)
+```
+
+### For Administrators
+
+```clarity
+;; Add new strategy
+(contract-call? .yield-aggregator add-strategy name protocol min-deposit max-deposit)
+
+;; Update strategy APY
+(contract-call? .yield-aggregator update-strategy-apy strategy-id new-apy)
+
+;; Toggle emergency shutdown
+(contract-call? .yield-aggregator toggle-emergency-shutdown)
+```
+
+## Error Codes
+
+| Code | Description                |
+| ---- | -------------------------- |
+| u100 | Not authorized             |
+| u101 | Invalid amount             |
+| u102 | Insufficient balance       |
+| u103 | Strategy already exists    |
+| u104 | Strategy not found         |
+| u105 | Strategy disabled          |
+| u106 | Maximum strategies reached |
+| u107 | Slippage too high          |
+| u108 | Emergency shutdown active  |
+
+## Security Considerations
+
+1. **Access Control**
+
+   - Contract owner privileges
+   - Strategy management restrictions
+   - Emergency shutdown capability
+
+2. **Fund Safety**
+
+   - Deposit/withdrawal validations
+   - Balance checks
+   - Share token calculations
+
+3. **Risk Management**
+   - Strategy risk scoring
+   - Allocation limits
+   - Emergency procedures
+
+## Testing
+
+Comprehensive test coverage is essential. Test cases should include:
+
+1. Basic functionality
+
+   - Deposits
+   - Withdrawals
+   - Share calculations
+
+2. Strategy management
+
+   - Adding strategies
+   - Updating APY
+   - Allocation logic
+
+3. Security features
+
+   - Access controls
+   - Emergency shutdown
+   - Error conditions
+
+4. Edge cases
+   - Zero amounts
+   - Maximum values
+   - Invalid inputs
