@@ -175,3 +175,109 @@
         acc
     )
 )
+
+;; Public Functions
+(define-public (deposit (token <sip-010-token>) (amount uint))
+    (let
+        (
+            (user tx-sender)
+            (current-deposit (default-to { total-deposit: u0, share-tokens: u0, last-deposit-block: u0 }
+                (map-get? UserDeposits { user: user })))
+        )
+        (asserts! (not (var-get emergency-shutdown)) ERR-EMERGENCY-SHUTDOWN)
+        (asserts! (> amount u0) ERR-INVALID-AMOUNT)
+
+        ;; Transfer tokens to contract
+        (try! (contract-call? token transfer
+            amount
+            tx-sender
+            (as-contract tx-sender)
+            none))
+
+        (let
+            (
+                (new-shares (calculate-shares amount))
+                (new-total-deposit (+ (get total-deposit current-deposit) amount))
+            )
+            (map-set UserDeposits
+                { user: user }
+                {
+                    total-deposit: new-total-deposit,
+                    share-tokens: (+ (get share-tokens current-deposit) new-shares),
+                    last-deposit-block: block-height
+                }
+            )
+
+            (var-set total-value-locked (+ (var-get total-value-locked) amount))
+
+            (try! (allocate-to-best-strategy amount))
+
+            (ok true)
+        )
+    )
+)
+
+(define-public (withdraw (token <sip-010-token>) (share-amount uint))
+    (let
+        (
+            (user tx-sender)
+            (user-deposit (unwrap! (map-get? UserDeposits { user: user }) ERR-INSUFFICIENT-BALANCE))
+        )
+        (asserts! (<= share-amount (get share-tokens user-deposit)) ERR-INSUFFICIENT-BALANCE)
+
+        (let
+            (
+                (withdrawal-amount (calculate-withdrawal-amount share-amount))
+                (new-shares (- (get share-tokens user-deposit) share-amount))
+            )
+            (map-set UserDeposits
+                { user: user }
+                {
+                    total-deposit: (- (get total-deposit user-deposit) withdrawal-amount),
+                    share-tokens: new-shares,
+                    last-deposit-block: (get last-deposit-block user-deposit)
+                }
+            )
+
+            (var-set total-value-locked (- (var-get total-value-locked) withdrawal-amount))
+
+            ;; Transfer tokens back to user
+            (try! (as-contract (contract-call? token transfer
+                withdrawal-amount
+                tx-sender
+                user
+                none)))
+
+            (ok withdrawal-amount)
+        )
+    )
+)
+
+;; SIP-010 Trait Implementation
+(define-public (transfer (amount uint) (sender principal) (recipient principal) (memo (optional (buff 34))))
+    (ok true)
+)
+
+(define-read-only (get-name)
+    (ok "Yield Aggregator Token")
+)
+
+(define-read-only (get-symbol)
+    (ok "YAT")
+)
+
+(define-read-only (get-decimals)
+    (ok u6)
+)
+
+(define-read-only (get-balance (who principal))
+    (ok u0)
+)
+
+(define-read-only (get-total-supply)
+    (ok u0)
+)
+
+(define-read-only (get-token-uri)
+    (ok none)
+)
