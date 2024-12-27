@@ -129,3 +129,49 @@
         (filter is-strategy-active (list strategy-1 strategy-2))
     )
 )
+
+;; Private Functions
+(define-private (convert-to-filtered-strategy (strategy {
+        strategy-id: uint,
+        name: (string-utf8 64),
+        protocol: (string-utf8 64),
+        enabled: bool,
+        tvl: uint,
+        apy: uint,
+        risk-score: uint,
+        last-harvest: uint
+    }))
+    (tuple
+        (strategy-id (get strategy-id strategy))
+        (enabled (get enabled strategy))
+        (tvl (get tvl strategy))
+        (apy (get apy strategy))
+        (risk-score (get risk-score strategy))
+    )
+)
+
+(define-private (is-strategy-active (strategy {
+        strategy-id: uint,
+        enabled: bool,
+        tvl: uint,
+        apy: uint,
+        risk-score: uint
+    }))
+    (and (get enabled strategy) (> (get apy strategy) u0))
+)
+
+(define-private (calculate-highest-apy
+    (strategy (tuple (strategy-id uint) (enabled bool) (tvl uint) (apy uint) (risk-score uint)))
+    (acc (tuple (best-apy uint) (best-strategy uint)))
+)
+    (if (and
+            (get enabled strategy)
+            (> (get apy strategy) (get best-apy acc))
+        )
+        (tuple
+            (best-apy (get apy strategy))
+            (best-strategy (get strategy-id strategy))
+        )
+        acc
+    )
+)
