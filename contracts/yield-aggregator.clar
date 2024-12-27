@@ -411,3 +411,68 @@
         (ok true)
     )
 )
+
+;; Convert strategy ID to full strategy info
+(define-private (unwrap-strategy (strategy-id uint))
+    (let
+        (
+            (strategy (map-get? Strategies { strategy-id: strategy-id }))
+        )
+        (if (is-some strategy)
+            (let
+                (
+                    (strategy-info (unwrap-panic strategy))
+                )
+                {
+                    strategy-id: strategy-id,
+                    name: (get name strategy-info),
+                    protocol: (get protocol strategy-info),
+                    enabled: (get enabled strategy-info),
+                    tvl: (get tvl strategy-info),
+                    apy: (get apy strategy-info),
+                    risk-score: (get risk-score strategy-info),
+                    last-harvest: (get last-harvest strategy-info)
+                }
+            )
+            {
+                strategy-id: strategy-id,
+                name: u"default-name-utf8",
+                protocol: u"default-protocol-utf8",
+                enabled: false,
+                tvl: u0,
+                apy: u0,
+                risk-score: u0,
+                last-harvest: u0
+            }
+        )
+    )
+)
+
+(define-private (verify-token (token <sip-010-token>))
+    (let ((allowed-token (unwrap! (var-get token-contract) ERR-TOKEN-NOT-SET)))
+        (asserts! (is-eq (contract-of token) allowed-token) ERR-INVALID-TOKEN)
+        (ok true)
+        )
+)
+
+(define-private (validate-strategy-params
+    (name (string-utf8 64))
+    (protocol (string-utf8 64))
+    (min-deposit uint)
+    (max-deposit uint))
+    (begin
+        (asserts! (> (len name) u0) ERR-INVALID-NAME)
+        (asserts! (> (len protocol) u0) ERR-INVALID-PROTOCOL)
+        (asserts! (> max-deposit min-deposit) ERR-INVALID-DEPOSIT-RANGE)
+        (asserts! (> min-deposit u0) ERR-INVALID-MIN-DEPOSIT)
+        (ok true)
+        )
+)
+
+(define-private (validate-strategy-id (strategy-id uint))
+    (begin
+        (asserts! (<= strategy-id (var-get max-strategies)) ERR-INVALID-STRATEGY-ID)
+        (asserts! (> strategy-id u0) ERR-INVALID-STRATEGY-ID)
+        (ok true)
+        )
+)
