@@ -281,3 +281,72 @@
 (define-read-only (get-token-uri)
     (ok none)
 )
+
+;; Admin Functions
+(define-public (add-strategy (name (string-utf8 64)) (protocol (string-utf8 64)) (min-deposit uint) (max-deposit uint))
+    (let
+        (
+            (strategy-count (len (get-strategy-list)))
+        )
+        (asserts! (is-contract-owner) ERR-NOT-AUTHORIZED)
+        (asserts! (< strategy-count (var-get max-strategies)) ERR-MAX-STRATEGIES-REACHED)
+
+        (map-set Strategies
+            { strategy-id: (+ strategy-count u1) }
+            {
+                name: name,
+                protocol: protocol,
+                enabled: true,
+                tvl: u0,
+                apy: u0,
+                risk-score: u0,
+                last-harvest: block-height
+            }
+        )
+
+        (map-set StrategyAllocations
+            { strategy-id: (+ strategy-count u1) }
+            {
+                allocation-percentage: u0,
+                min-deposit: min-deposit,
+                max-deposit: max-deposit
+            }
+        )
+
+        (ok true)
+    )
+)
+
+(define-public (update-strategy-apy (strategy-id uint) (new-apy uint))
+    (let
+        ((strategy (map-get? Strategies { strategy-id: strategy-id })))
+        (begin
+            (asserts! (is-contract-owner) ERR-NOT-AUTHORIZED)
+            ;; Check if strategy exists
+            (asserts! (is-some strategy) ERR-STRATEGY-NOT-FOUND)
+
+            (map-set Strategies
+                { strategy-id: strategy-id }
+                (merge (unwrap! strategy ERR-STRATEGY-NOT-FOUND)
+                      { apy: new-apy })
+            )
+            (ok true)
+        )
+    )
+)
+
+(define-public (toggle-emergency-shutdown)
+    (begin
+        (asserts! (is-contract-owner) ERR-NOT-AUTHORIZED)
+        (var-set emergency-shutdown (not (var-get emergency-shutdown)))
+        (ok true)
+    )
+)
+
+(define-public (set-token-contract (new-token principal))
+    (begin
+        (asserts! (is-contract-owner) ERR-NOT-AUTHORIZED)
+        (var-set token-contract (some new-token))
+        (ok true)
+    )
+)
