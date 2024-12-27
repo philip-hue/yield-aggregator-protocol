@@ -34,3 +34,44 @@
 (define-constant ERR-INVALID-STRATEGY-ID (err u115))
 (define-constant ERR-NOT-CONTRACT (err u116))
 (define-constant ERR-REENTRANCY (err u117))
+
+;; Data Variables
+(define-data-var contract-owner principal tx-sender)
+(define-data-var emergency-shutdown bool false)
+(define-data-var total-value-locked uint u0)
+(define-data-var performance-fee uint u200) ;; 2% represented as basis points
+(define-data-var management-fee uint u100)  ;; 1% represented as basis points
+(define-data-var max-strategies uint u10)
+(define-data-var token-contract (optional principal) none)
+
+;; Data Maps
+(define-map Strategies
+    { strategy-id: uint }
+    {
+        name: (string-utf8 64),
+        protocol: (string-utf8 64),
+        enabled: bool,
+        tvl: uint,
+        apy: uint,
+        risk-score: uint,
+        last-harvest: uint
+    }
+)
+
+(define-map UserDeposits
+    { user: principal }
+    {
+        total-deposit: uint,
+        share-tokens: uint,
+        last-deposit-block: uint
+    }
+)
+
+(define-map StrategyAllocations
+    { strategy-id: uint }
+    {
+        allocation-percentage: uint,
+        min-deposit: uint,
+        max-deposit: uint
+    }
+)
